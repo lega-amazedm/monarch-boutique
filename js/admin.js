@@ -20,6 +20,37 @@
     saleFields.classList.toggle("hidden", !saleOn.checked);
   }
 
+  const PANE_TITLES = {
+    goods: "Товары",
+    card: "Карточка",
+    images: "Картинки",
+    categories: "Категории",
+    sales: "Акции",
+    shop: "Магазин",
+    stats: "Статистика",
+    data: "Данные"
+  };
+
+  function closeAdminMenu() {
+    const tabs = document.getElementById("admin-tabs");
+    const overlay = document.getElementById("admin-overlay");
+    const btn = document.getElementById("admin-sections-btn");
+    if (tabs) tabs.classList.remove("open");
+    if (overlay) overlay.hidden = true;
+    if (btn) btn.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("admin-menu-open");
+  }
+
+  function openAdminMenu() {
+    const tabs = document.getElementById("admin-tabs");
+    const overlay = document.getElementById("admin-overlay");
+    const btn = document.getElementById("admin-sections-btn");
+    if (tabs) tabs.classList.add("open");
+    if (overlay) overlay.hidden = false;
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    document.body.classList.add("admin-menu-open");
+  }
+
   function setPane(name) {
     document.querySelectorAll(".admin-pane").forEach(function (p) {
       p.classList.toggle("active", p.id === "pane-" + name);
@@ -27,11 +58,11 @@
     document.querySelectorAll("#admin-tabs button").forEach(function (b) {
       b.classList.toggle("active", b.getAttribute("data-pane") === name);
     });
-    
-    if (name === "stats") {
-      renderStats();
-    }
-    
+    const title = document.getElementById("admin-current");
+    if (title) title.textContent = PANE_TITLES[name] || name;
+    if (name === "stats") renderStats();
+    if (name === "sales") renderSales();
+    closeAdminMenu();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -45,8 +76,20 @@
     renderCatToggles();
     renderCatImages();
     renderStats();
+    renderSales();
     toggleSaleFields();
   }
+
+  const sectionsBtn = document.getElementById("admin-sections-btn");
+  if (sectionsBtn) {
+    sectionsBtn.addEventListener("click", function () {
+      const tabs = document.getElementById("admin-tabs");
+      if (tabs && tabs.classList.contains("open")) closeAdminMenu();
+      else openAdminMenu();
+    });
+  }
+  const overlayEl = document.getElementById("admin-overlay");
+  if (overlayEl) overlayEl.addEventListener("click", closeAdminMenu);
 
   document.getElementById("login-form").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -245,6 +288,48 @@
     });
   }
 
+  function renderSales() {
+    const box = document.getElementById("sale-cards");
+    if (!box) return;
+    const list = MB.loadProducts().filter(function (p) { return MB.saleInfo(p).on; });
+    box.innerHTML = list.map(function (p) {
+      const sale = MB.saleInfo(p);
+      return (
+        '<article class="admin-card">' +
+        '<img src="' + p.image + '" alt="">' +
+        "<div>" +
+        "<h3>" + p.name + "</h3>" +
+        '<p class="muted">' + p.category + " · −" + sale.pct + "%</p>" +
+        "<p>" + MB.money(sale.price) + " · было " + MB.money(sale.oldPrice) + "</p>" +
+        '<div class="row-actions">' +
+        '<button class="btn" data-edit-sale="' + p.id + '">Изменить</button>' +
+        "</div></div></article>"
+      );
+    }).join("") || '<div class="empty">Акций пока нет. Включите скидку в карточке товара.</div>';
+  }
+
+  const saleCards = document.getElementById("sale-cards");
+  if (saleCards) {
+    saleCards.addEventListener("click", function (e) {
+      const edit = e.target.closest("[data-edit-sale]");
+      if (!edit) return;
+      const p = MB.loadProducts().find(function (x) { return x.id === edit.getAttribute("data-edit-sale"); });
+      if (!p) return;
+      form.id.value = p.id;
+      form.name.value = p.name;
+      form.category.value = p.category;
+      form.price.value = p.price;
+      form.oldPrice.value = p.oldPrice || "";
+      saleOn.checked = !!p.saleOn;
+      toggleSaleFields();
+      form.image.value = p.image;
+      form.description.value = p.description || "";
+      sizesState = MB.parseSizes(p.sizes, p.qty);
+      renderSizes();
+      setPane("card");
+    });
+  }
+
   function render() {
     const list = MB.loadProducts();
     listBox.innerHTML = list.map(function (p) {
@@ -293,6 +378,7 @@
       if (!confirm("Удалить товар?")) return;
       MB.saveProducts(list.filter(function (x) { return x.id !== id; }));
       render();
+      renderSales();
     }
   });
 
@@ -335,6 +421,7 @@
     if (idx >= 0) list[idx] = item;
     else list.unshift(item);
     MB.saveProducts(list);
+    renderSales();
     form.reset();
     form.id.value = "";
     saleOn.checked = false;
@@ -456,6 +543,7 @@
         
         showToast("Данные импортированы успешно");
         render();
+        renderSales();
         renderStats();
         renderCatToggles();
         renderCatImages();

@@ -24,9 +24,11 @@
   function renderCart() {
     const cartItems = MB.getCartDetails();
     
+    if (MB.paintCartBadges) MB.paintCartBadges();
+
     if (!cartItems.length) {
-      cartContent.style.display = "none";
-      emptyCartContainer.style.display = "block";
+      if (cartContent) cartContent.style.display = "none";
+      if (emptyCartContainer) emptyCartContainer.style.display = "block";
       return;
     }
 
@@ -60,7 +62,7 @@
     cartSummaryContainer.innerHTML =
       '<div class="cart-summary-row">' +
       '<span>Товаров:</span>' +
-      '<span>' + cartItems.length + '</span>' +
+      '<span>' + MB.getCartCount() + '</span>' +
       '</div>' +
       '<div class="cart-summary-row total">' +
       '<span>Итого:</span>' +

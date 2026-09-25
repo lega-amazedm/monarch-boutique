@@ -1718,6 +1718,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--gold); }
 
 .admin-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 0 0 18px;
 }
@@ -2335,28 +2336,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--gold); }
   .table { display: none; }
   .card:hover { transform: none; }
 
-  .admin-app { padding-bottom: 88px; }
-  .admin-tabs {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 60;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-    background: rgba(7, 7, 6, 0.96);
-    border-top: 1px solid var(--line);
-  }
-
-  .admin-tabs button {
-    min-height: 48px;
-    border: 0;
-    border-right: 1px solid rgba(200, 164, 90, 0.16);
-  }
-
-  .admin-tabs button:last-child { border-right: 0; }
+  .admin-app { padding-bottom: 24px; }
   .lock-box { padding: 28px 18px; }
 }
 
@@ -2651,4 +2631,100 @@ body { animation: pageIn 0.5s ease both; }
   .hero::before, .hero::after { display: none; }
   body { animation: none; }
   .scroll-progress { display: none; }
+}
+
+/* Единая палитра: чёрный фон, золото как акцент */
+.section.alt { background: var(--bg-2); }
+.panel,
+.admin-card,
+.lock-box,
+.modal,
+.benefit-card,
+.contact-card,
+.step-item {
+  background: var(--bg-2);
+  border-color: var(--line);
+}
+.modal, .toast {
+  border-color: var(--gold);
+  background: var(--bg-2);
+  color: var(--gold-2);
+}
+
+.footer-inner {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tabbar a { position: relative; }
+.tabbar .cart-count {
+  top: 2px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+}
+
+.admin-sections-btn,
+.admin-current { display: none; }
+.admin-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-overlay[hidden] { display: none !important; }
+.admin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 65;
+}
+.admin-app .section {
+  opacity: 1;
+  transform: none;
+}
+.admin-body { padding-bottom: 0 !important; }
+
+@media (max-width: 980px) {
+  .admin-sections-btn { display: inline-flex; min-height: 40px; padding: 8px 12px; }
+  .admin-current {
+    display: inline-block;
+    color: var(--gold-2);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+  .admin-tabs {
+    display: none;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 76px;
+    bottom: auto;
+    z-index: 70;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    max-height: min(70vh, calc(100svh - 100px));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-tabs.open { display: grid; }
+  .admin-tabs button {
+    min-height: 56px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--gold-2);
+    padding: 12px 8px;
+    font-size: 12px;
+  }
+  .admin-tabs button.active {
+    border-color: var(--gold);
+    background: var(--gold-light);
+  }
+  .admin-head { gap: 8px; }
+  .admin-head .logo-text em { display: none; }
 }

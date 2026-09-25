@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="img/logo.svg" type="image/svg+xml">
 </head>
-<body>
+<body class="admin-body">
   <div class="admin-lock" id="admin-lock">
     <div class="lock-box">
       <span class="mark"><img src="img/logo.svg" alt=""></span>
@@ -33,19 +33,28 @@
           <span class="mark"><img src="img/logo.svg" alt=""></span>
           <span class="logo-text"><b>MONARCH</b><em>ADMIN</em></span>
         </a>
-        <button class="btn ghost" id="logout" type="button">Выйти</button>
+        <div class="admin-head-actions">
+          <button class="btn ghost admin-sections-btn" id="admin-sections-btn" type="button">Разделы</button>
+          <span class="admin-current" id="admin-current">Товары</span>
+          <button class="btn ghost" id="logout" type="button">Выйти</button>
+        </div>
       </div>
     </header>
 
-    <section class="section" style="padding-top:28px">
+    <div class="admin-overlay" id="admin-overlay" hidden></div>
+
+    <section class="section visible">
       <div class="wrap">
-        <div class="admin-tabs" id="admin-tabs">
+        <nav class="admin-tabs" id="admin-tabs">
           <button type="button" class="active" data-pane="goods">Товары</button>
           <button type="button" data-pane="card">Карточка</button>
+          <button type="button" data-pane="images">Картинки</button>
+          <button type="button" data-pane="categories">Категории</button>
+          <button type="button" data-pane="sales">Акции</button>
           <button type="button" data-pane="shop">Магазин</button>
           <button type="button" data-pane="stats">Статистика</button>
           <button type="button" data-pane="data">Данные</button>
-        </div>
+        </nav>
 
         <div class="admin-pane active" id="pane-goods">
           <div class="section-head">
@@ -95,20 +104,34 @@
           </div>
         </div>
 
-        <div class="admin-pane" id="pane-shop">
-          <div class="panel" style="margin-bottom:20px">
+        <div class="admin-pane" id="pane-images">
+          <div class="panel">
+            <div class="eyebrow">Оформление</div>
+            <h2>Картинки категорий</h2>
+            <p class="muted">Фото на карточках категорий. Без фото останется иконка.</p>
+            <div id="cat-images" class="cat-images-list"></div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="pane-categories">
+          <div class="panel">
             <div class="eyebrow">Витрина</div>
             <h2>Категории</h2>
             <p class="muted">Снимите галочку — раздел скрыт с сайта.</p>
             <div id="cat-toggles"></div>
           </div>
+        </div>
 
-          <div class="panel" style="margin-bottom:20px">
-            <div class="eyebrow">Оформление</div>
-            <h2>Фото категорий</h2>
-            <p class="muted">Загрузите фото для каждой категории — оно заменит стандартную иконку на карточке. Без фото останется иконка.</p>
-            <div id="cat-images" class="cat-images-list"></div>
+        <div class="admin-pane" id="pane-sales">
+          <div class="panel">
+            <div class="eyebrow">Скидки</div>
+            <h2>Акции</h2>
+            <p class="muted">Товары со скидкой. Чтобы изменить акцию, откройте карточку товара.</p>
+            <div class="admin-list" id="sale-cards"></div>
           </div>
+        </div>
+
+        <div class="admin-pane" id="pane-shop">
           <div class="panel">
             <div class="eyebrow">Точка</div>
             <h2>Адрес и доставка</h2>
@@ -145,8 +168,8 @@
         <div class="admin-pane" id="pane-data">
           <div class="panel" style="margin-bottom:20px">
             <div class="eyebrow">Резервное копирование</div>
-            <h2>Экспорт и импорт данных</h2>
-            <p class="muted">Сохраните все данные товаров и настроек в файл или восстановите из резервной копии.</p>
+            <h2>Экспорт и импорт</h2>
+            <p class="muted">Сохраните товары и настройки в файл или восстановите из копии.</p>
             <div class="data-actions">
               <button class="btn solid" id="export-data">Экспорт данных</button>
               <label class="btn ghost">
@@ -158,7 +181,7 @@
           <div class="panel">
             <div class="eyebrow">Опасная зона</div>
             <h2>Сброс данных</h2>
-            <p class="muted">Удалить все товары и восстановить настройки по умолчанию. Это действие нельзя отменить.</p>
+            <p class="muted">Удалить все товары и вернуть настройки по умолчанию.</p>
             <button class="btn ghost" id="reset-data" style="border-color: var(--danger); color: var(--danger);">Сбросить все данные</button>
           </div>
         </div>

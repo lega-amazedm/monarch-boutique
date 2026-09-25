@@ -251,13 +251,7 @@
   }
 
   function updateCartCount() {
-    const cart = MB.loadCart();
-    const count = cart.reduce(function (sum, item) { return sum + item.quantity; }, 0);
-    const cartCountEl = document.getElementById("cart-count");
-    if (cartCountEl) {
-      cartCountEl.textContent = count;
-      cartCountEl.classList.toggle("hidden", count === 0);
-    }
+    if (MB.paintCartBadges) MB.paintCartBadges();
   }
 
   function openQuickView(productId) {
@@ -735,18 +729,6 @@
         window.location.href = "catalog.html";
       }
     });
-  }
-
-  // Sale grid on main page
-  const saleGrid = document.getElementById("sale-grid");
-  if (saleGrid) {
-    const allProducts = MB.visibleProducts();
-    const saleProducts = allProducts.filter(function (p) {
-      return MB.saleInfo(p).on;
-    }).slice(0, 3);
-    
-    saleGrid.innerHTML = saleProducts.map(cardHtml).join("") || '<div class="empty">Акционные товары скоро появятся</div>';
-    bindBuy(saleGrid);
   }
 
   // Contact form functionality
