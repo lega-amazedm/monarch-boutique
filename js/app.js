@@ -4,6 +4,75 @@
   let currentProduct = null;
   let currentSize = "";
 
+  // Иконки категорий — используются вместо пустого фона на карточках категорий
+  const CAT_ICON_PATHS = {
+    hanger: '<circle cx="12" cy="4.4" r="1.4"/><path d="M12 5.8v1"/><path d="M12 6.8 3 12.6h18Z"/><path d="M3 15.4h18"/>',
+    shirt: '<path d="M9 3.5 5 7l2 2.5 2-1.2V20h6V8.3l2 1.2L19 7l-4-3.5c-.6 1-1.7 1.6-3 1.6S9.6 4.5 9 3.5Z"/>',
+    jacket: '<path d="M8 3.5 4 7l2 2.5 2-1.3V20h3V9h2v11h3V8.2l2 1.3L19 7l-4-3.5-3 2-3-2Z"/><path d="M12 9v11"/>',
+    pants: '<path d="M6 3h12l.8 5-2 13h-3l-.8-9-.8 9H9L7 8Z"/>',
+    shoe: '<path d="M3 17c0-2 1.5-3 3-3.5l6-2c1-1.5 2.5-2.5 4-2.5l3 .5v4l3 1v3.5c0 .6-.4 1-1 1H4c-.6 0-1-.4-1-1Z"/>',
+    cap: '<path d="M4 13c0-4.4 3.6-8 8-8s8 3.6 8 8"/><path d="M4 13h16v1c0 .8-.7 1.5-1.5 1.5h-13C4.7 14.5 4 13.8 4 13Z"/><path d="M9 5.3c1-.5 2-.8 3-.8"/>'
+  };
+
+  const CAT_ICON_MAP = {
+    "Одежда": "hanger",
+    "Обувь": "shoe",
+    "Головные уборы": "cap",
+    "Джинсы": "pants",
+    "Карго-брюки": "pants",
+    "Шорты": "pants",
+    "Худи": "shirt",
+    "Свитшоты": "shirt",
+    "Кофты": "shirt",
+    "Свитеры": "shirt",
+    "Кардиганы": "shirt",
+    "Футболки": "shirt",
+    "Поло": "shirt",
+    "Лонгсливы": "shirt",
+    "Рубашки": "shirt",
+    "Спортивки": "pants",
+    "Куртки": "jacket",
+    "Ветровки": "jacket",
+    "Бомберы": "jacket",
+    "Жилетки": "jacket",
+    "Пальто": "jacket",
+    "Кроссовки": "shoe",
+    "Ботинки": "shoe",
+    "Лоферы": "shoe",
+    "Шапки": "cap",
+    "Кепки": "cap"
+  };
+
+  // Builds a "framed" image: the photo is shown in full (never cropped),
+  // and any empty space around it is filled with a soft blurred copy of
+  // the same photo instead of ugly bare margins.
+  function frameImg(url, alt) {
+    const safeUrl = String(url).replace(/'/g, "%27").replace(/"/g, "&quot;");
+    const safeAlt = String(alt || "").replace(/"/g, "");
+    return (
+      '<div class="media-frame">' +
+      '<div class="media-blur" style="background-image:url(\'' + safeUrl + '\')"></div>' +
+      '<img class="media-fg" src="' + url + '" alt="' + safeAlt + '">' +
+      "</div>"
+    );
+  }
+
+  function categoryIcon(name) {
+    const key = CAT_ICON_MAP[name] || "hanger";
+    const inner = CAT_ICON_PATHS[key] || CAT_ICON_PATHS.hanger;
+    return '<svg viewBox="0 0 24 24" aria-hidden="true">' + inner + "</svg>";
+  }
+
+  // Category card media: uses the photo set in the admin panel if there is
+  // one, otherwise falls back to the default line icon.
+  function categoryMediaHtml(name) {
+    const img = MB.getCategoryImage ? MB.getCategoryImage(name) : "";
+    if (img && img.trim() !== "") {
+      return '<div class="category-card-bg has-image">' + frameImg(img, name) + '</div>';
+    }
+    return '<div class="category-card-bg">' + categoryIcon(name) + '</div>';
+  }
+
   function showToast(text) {
     if (!toast) return;
     toast.textContent = text;
@@ -108,7 +177,7 @@
       .join("");
     const hasImage = p.image && p.image.trim() !== "";
     const imageHtml = hasImage 
-      ? '<img alt="' + p.name.replace(/"/g, "") + '" src="' + p.image + '">'
+      ? frameImg(p.image, p.name)
       : '<div class="card-placeholder"><span>' + p.name.charAt(0) + '</span></div>';
     
     return (
@@ -210,7 +279,7 @@
 
     const hasImage = product.image && product.image.trim() !== "";
     const imageHtml = hasImage 
-      ? '<img alt="" src="' + product.image + '">'
+      ? frameImg(product.image, product.name)
       : '<div class="product-placeholder"><span>' + product.name.charAt(0) + '</span></div>';
 
     quickViewContent.innerHTML =
@@ -227,7 +296,7 @@
       '<div class="size-label">Размер</div>' +
       '<div class="size-row">' + (sizeBtns || '<span class="muted">Нет размеров</span>') + "</div>" +
       '<div class="modal-actions">' +
-      '<button class="btn solid" ' + (out ? "disabled" : "") + ' data-add-cart="' + product.id + '">В корзину</button>' +
+      '<button class="btn solid btn-cta" ' + (out ? "disabled" : "") + ' data-add-cart="' + product.id + '"><span>' + (out ? "Нет в наличии" : "В корзину") + '</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' +
       '<a class="btn ghost" href="product.html?id=' + encodeURIComponent(product.id) + '">Подробнее</a>' +
       "</div></div>";
 
@@ -318,8 +387,15 @@
     }
 
     function paintGrid() {
+      // On the catalog picker screens (no subcategory chosen yet, and no
+      // search running) we only want the category cards — not a product
+      // grid underneath them. Only render products once the user has
+      // drilled down into an actual subcategory (or is searching).
+      if (!featured && !activeLeaf && !searchQuery) {
+        catalog.innerHTML = "";
+        return;
+      }
       const list = currentList();
-      console.log("Current product list:", list.length, "items");
       catalog.innerHTML = list.map(cardHtml).join("") || '<div class="empty">По вашему запросу ничего не найдено</div>';
       bindBuy(catalog);
     }
@@ -360,7 +436,6 @@
       });
     }
 
-    console.log("Initial catalog load");
     paintGrid();
   }
 
@@ -382,7 +457,7 @@
         .join("");
       const hasImage = product.image && product.image.trim() !== "";
       const imageHtml = hasImage 
-        ? '<img alt="" src="' + product.image + '">'
+        ? frameImg(product.image, product.name)
         : '<div class="product-placeholder"><span>' + product.name.charAt(0) + '</span></div>';
       
       productRoot.innerHTML =
@@ -391,15 +466,21 @@
         imageHtml +
         '</div>' +
         '<div class="product-info">' +
+        '<p class="product-tagline">' + MB.SHOP + '</p>' +
         '<div class="eyebrow">' + product.category + " · " + product.id + "</div>" +
         "<h1>" + product.name + "</h1>" +
-        '<p class="muted">' + (product.description || "") + "</p>" +
+        '<p class="muted">' + (product.description || "Стиль · Комфорт · Качество") + "</p>" +
+        '<div class="product-features">' +
+        '<div class="feature-mini"><svg viewBox="0 0 24 24"><path d="M12 3l2.2 4.6L19 8.2l-3.5 3.3.9 5.2L12 14.8 7.6 16.7l.9-5.2L5 8.2l4.8-.6L12 3z"/></svg><span>Premium<br>качество</span></div>' +
+        '<div class="feature-mini"><svg viewBox="0 0 24 24"><path d="M6 3c0 3 3 3 3 6s-3 3-3 6 3 3 3 6"/><path d="M12 3c0 3 3 3 3 6s-3 3-3 6 3 3 3 6"/><path d="M18 3c0 3 3 3 3 6s-3 3-3 6 3 3 3 6"/></svg><span>Приятная<br>ткань</span></div>' +
+        '<div class="feature-mini"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Стильный<br>дизайн</span></div>' +
+        "</div>" +
         '<div class="meta">' + MB.priceHtml(product) +
         '<span class="qty' + (out ? " out" : "") + '">В наличии: ' + MB.totalQty(product) + " шт</span></div>" +
         '<div class="size-label">Размер</div>' +
         '<div class="size-row" id="page-sizes">' + (sizeBtns || '<span class="muted">Нет размеров</span>') + "</div>" +
         '<div class="product-actions">' +
-        '<button class="btn solid" ' + (out ? "disabled" : "") + ' data-add-cart="' + product.id + '">В корзину</button>' +
+        '<button class="btn solid btn-cta" ' + (out ? "disabled" : "") + ' data-add-cart="' + product.id + '"><span>' + (out ? "Нет в наличии" : "Добавить в корзину") + '</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' +
         '<a class="btn ghost" href="catalog.html?cat=' + encodeURIComponent(product.category) + '">В каталог</a>' +
         "</div></div>";
       let pageSize = "";
@@ -540,16 +621,16 @@
   // Categories grid on main page and catalog
   const categoriesGrid = document.getElementById("categories-grid");
   const backBtn = document.getElementById("back-to-cats");
-  
+  const catalogSubtitle = document.querySelector(".section-subtitle");
+
   if (categoriesGrid) {
     const groups = MB.enabledGroups();
-    console.log("Enabled groups:", groups);
-    
+
     // Check if this is catalog page by checking URL
     const isCatalogPage = location.pathname.includes('catalog.html');
     const params = new URLSearchParams(location.search);
     const q = params.get("cat") || "";
-    
+
     if (isCatalogPage) {
       if (q) {
         // A specific category or group is selected
@@ -557,10 +638,12 @@
         if (g) {
           // A main group is selected - show its children as cards
           if (backBtn) backBtn.style.display = "inline-block";
+          categoriesGrid.classList.remove("hidden");
+          if (catalogSubtitle) catalogSubtitle.textContent = g.name + " — выберите категорию";
           categoriesGrid.innerHTML = g.children.map(function (c) {
             return (
               '<a class="category-card" href="catalog.html?cat=' + encodeURIComponent(c) + '">' +
-              '<div class="category-card-bg"></div>' +
+              categoryMediaHtml(c) +
               '<div class="category-card-content">' +
               '<h3>' + c + '</h3>' +
               '<p>' + g.name + '</p>' +
@@ -568,28 +651,25 @@
             );
           }).join("");
         } else {
-          // A subcategory is selected - show sibling subcategories of the same group, highlighting the active one
-          if (backBtn) backBtn.style.display = "inline-block";
+          // A subcategory (leaf) is selected - the picker is no longer needed, show products instead
           let parentGroup = null;
           groups.forEach(function (x) {
             if (x.children.indexOf(q) >= 0) parentGroup = x;
           });
           if (parentGroup) {
-            categoriesGrid.innerHTML = parentGroup.children.map(function (c) {
-              return (
-                '<a class="category-card' + (c === q ? " active" : "") + '" href="catalog.html?cat=' + encodeURIComponent(c) + '">' +
-                '<div class="category-card-bg"></div>' +
-                '<div class="category-card-content">' +
-                '<h3>' + c + '</h3>' +
-                '<p>' + parentGroup.name + '</p>' +
-                '</div></a>'
-              );
-            }).join("");
+            if (backBtn) backBtn.style.display = "inline-block";
+            categoriesGrid.classList.add("hidden");
+            categoriesGrid.innerHTML = "";
+            if (catalogSubtitle) catalogSubtitle.textContent = parentGroup.name + " · " + q;
           } else {
+            // Invalid category in URL - fall back to top-level groups
+            if (backBtn) backBtn.style.display = "none";
+            categoriesGrid.classList.remove("hidden");
+            if (catalogSubtitle) catalogSubtitle.textContent = "Выберите категорию";
             categoriesGrid.innerHTML = groups.map(function (g) {
               return (
                 '<a class="category-card" href="catalog.html?cat=' + encodeURIComponent(g.name) + '">' +
-                '<div class="category-card-bg"></div>' +
+                categoryMediaHtml(g.name) +
                 '<div class="category-card-content">' +
                 '<h3>' + g.name + '</h3>' +
                 '<p>' + g.children.length + ' категорий</p>' +
@@ -601,10 +681,12 @@
       } else {
         // No category selected - show main groups
         if (backBtn) backBtn.style.display = "none";
+        categoriesGrid.classList.remove("hidden");
+        if (catalogSubtitle) catalogSubtitle.textContent = "Выберите категорию";
         categoriesGrid.innerHTML = groups.map(function (g) {
           return (
             '<a class="category-card" href="catalog.html?cat=' + encodeURIComponent(g.name) + '">' +
-            '<div class="category-card-bg"></div>' +
+            categoryMediaHtml(g.name) +
             '<div class="category-card-content">' +
             '<h3>' + g.name + '</h3>' +
             '<p>' + g.children.length + ' категорий</p>' +
@@ -623,11 +705,10 @@
       });
 
       const popularCategories = allCategories.slice(0, 6);
-      console.log("Popular categories:", popularCategories);
       categoriesGrid.innerHTML = popularCategories.map(function (cat) {
         return (
           '<a class="category-card" href="catalog.html?cat=' + encodeURIComponent(cat.name) + '">' +
-          '<div class="category-card-bg"></div>' +
+          categoryMediaHtml(cat.name) +
           '<div class="category-card-content">' +
           '<h3>' + cat.name + '</h3>' +
           '<p>' + cat.group + '</p>' +

@@ -3,6 +3,7 @@
   const SETTINGS_KEY = "mb_settings_v5";
   const AUTH_KEY = "mb_admin_ok";
   const CART_KEY = "mb_cart_v1";
+  const CATEGORY_IMAGES_KEY = "mb_category_images_v1";
 
   const PHONE = "89887736246";
   const PHONE_INTL = "79887736246";
@@ -141,6 +142,40 @@
     }).filter(function (g) { return g.children.length; });
   }
 
+  // Category images (photos shown on category cards instead of the default icon)
+  function loadCategoryImages() {
+    try {
+      const raw = localStorage.getItem(CATEGORY_IMAGES_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      return data && typeof data === "object" ? data : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveCategoryImages(map) {
+    localStorage.setItem(CATEGORY_IMAGES_KEY, JSON.stringify(map || {}));
+  }
+
+  function getCategoryImage(name) {
+    const map = loadCategoryImages();
+    return (map && map[name]) ? map[name] : "";
+  }
+
+  function setCategoryImage(name, url) {
+    const map = loadCategoryImages();
+    map[name] = url;
+    saveCategoryImages(map);
+    return map;
+  }
+
+  function removeCategoryImage(name) {
+    const map = loadCategoryImages();
+    delete map[name];
+    saveCategoryImages(map);
+    return map;
+  }
+
   function loadProducts() {
     try {
       const raw = localStorage.getItem(PRODUCTS_KEY);
@@ -171,13 +206,24 @@
     return loadProducts().find(function (p) { return p.id === id; }) || null;
   }
 
-  function productUrl(id) {
-    const origin = location.origin && location.origin !== "null" ? location.origin : "";
-    const path = location.pathname.replace(/[^/]*$/, "");
-    if (origin && origin.indexOf("http") === 0) {
-      return origin + path + "product.html?id=" + encodeURIComponent(id);
+  // A real, clickable link only exists once the site is served over
+  // http(s) — from the shop's own domain, or from the local server that
+  // start.bat launches (http://localhost:8080). Opening index.html by
+  // double-clicking it runs the page as file:///C:/..., and a link built
+  // from that address is useless to a customer (it only exists on this
+  // computer), so we simply don't build one in that case.
+  function siteBaseUrl() {
+    const origin = location.origin;
+    if (origin && /^https?:\/\//i.test(origin)) {
+      return origin + location.pathname.replace(/[^/]*$/, "");
     }
-    return location.href.replace(/[^/]*$/, "") + "product.html?id=" + encodeURIComponent(id);
+    return "";
+  }
+
+  function productUrl(id) {
+    const base = siteBaseUrl();
+    if (!base) return "";
+    return base + "product.html?id=" + encodeURIComponent(id);
   }
 
   function orderText(product, size) {
@@ -186,7 +232,8 @@
     const priceLine = sale.on
       ? "Цена: " + money(sale.price) + " (было " + money(sale.oldPrice) + ", скидка -" + sale.pct + "%)"
       : "Цена: " + money(sale.price);
-    return [
+    const url = productUrl(product.id);
+    const lines = [
       "Здравствуйте! Хочу оформить заказ в " + SHOP + ".",
       "",
       "Товар: " + product.name,
@@ -194,14 +241,17 @@
       "Размер: " + (size || "не выбран"),
       priceLine,
       "Артикул: " + product.id,
-      "Количество: 1",
-      "",
-      "Ссылка на товар:",
-      productUrl(product.id),
+      "Количество: 1"
+    ];
+    if (url) {
+      lines.push("", "Ссылка на товар:", url);
+    }
+    lines.push(
       "",
       "Доставка: " + (s.delivery || "по всей России, по Дербенту бесплатно"),
       "Самовывоз: " + s.city + ", " + s.address
-    ].join("\n");
+    );
+    return lines.join("\n");
   }
 
   function waLink(product, size) {
@@ -213,7 +263,9 @@
     const link = productUrl(product.id);
     return {
       chat: "https://t.me/" + TELEGRAM,
-      share: "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text),
+      share: link
+        ? "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text)
+        : "https://t.me/" + TELEGRAM,
       text: text,
       link: link
     };
@@ -316,14 +368,11 @@
     const cart = loadCart();
     if (!cart.length) return null;
 
+    const base = siteBaseUrl();
+    if (!base) return "";
+
     const cartData = encodeURIComponent(JSON.stringify(cart));
-    const baseUrl = location.origin && location.origin !== "null" ? location.origin : "";
-    const path = location.pathname.replace(/[^/]*$/, "");
-    
-    if (baseUrl && baseUrl.indexOf("http") === 0) {
-      return baseUrl + path + "cart.html?data=" + cartData;
-    }
-    return location.href.replace(/[^/]*$/, "") + "cart.html?data=" + cartData;
+    return base + "cart.html?data=" + cartData;
   }
 
   function loadCartFromUrl() {
@@ -375,11 +424,14 @@
       );
     });
 
+    lines.push("Итого: " + MB.money(getCartTotal()));
+
+    const cartLink = generateCartLink();
+    if (cartLink) {
+      lines.push("", "Ссылка на корзину:", cartLink);
+    }
+
     lines.push(
-      "Итого: " + MB.money(getCartTotal()),
-      "",
-      "Ссылка на корзину:",
-      generateCartLink(),
       "",
       "Доставка: " + (s.delivery || "по всей России, по Дербенту бесплатно"),
       "Самовывоз: " + s.city + ", " + s.address
@@ -397,7 +449,9 @@
     const link = generateCartLink();
     return {
       chat: "https://t.me/" + TELEGRAM,
-      share: "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text),
+      share: link
+        ? "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text)
+        : "https://t.me/" + TELEGRAM,
       text: text,
       link: link
     };
@@ -408,6 +462,7 @@
     SETTINGS_KEY: SETTINGS_KEY,
     AUTH_KEY: AUTH_KEY,
     CART_KEY: CART_KEY,
+    CATEGORY_IMAGES_KEY: CATEGORY_IMAGES_KEY,
     PHONE: PHONE,
     PHONE_INTL: PHONE_INTL,
     PHONE_NICE: PHONE_NICE,
@@ -427,6 +482,11 @@
     totalQty: totalQty,
     loadSettings: loadSettings,
     saveSettings: saveSettings,
+    loadCategoryImages: loadCategoryImages,
+    saveCategoryImages: saveCategoryImages,
+    getCategoryImage: getCategoryImage,
+    setCategoryImage: setCategoryImage,
+    removeCategoryImage: removeCategoryImage,
     isDisabled: isDisabled,
     enabledGroups: enabledGroups,
     loadProducts: loadProducts,

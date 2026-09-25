@@ -6,6 +6,7 @@
   const listBox = document.getElementById("product-cards");
   const sizeRows = document.getElementById("size-rows");
   const catBox = document.getElementById("cat-toggles");
+  const catImagesBox = document.getElementById("cat-images");
   const saleOn = document.getElementById("sale-on");
   const saleFields = document.getElementById("sale-fields");
   let sizesState = [];
@@ -42,6 +43,7 @@
     render();
     fillSettings();
     renderCatToggles();
+    renderCatImages();
     renderStats();
     toggleSaleFields();
   }
@@ -189,6 +191,59 @@
     s.disabledCategories = off;
     MB.saveSettings(s);
   });
+
+  function catImageRow(name, isGroup) {
+    const url = MB.getCategoryImage(name);
+    const has = !!(url && url.trim() !== "");
+    return (
+      '<div class="cat-image-row' + (isGroup ? " cat-image-row-group" : "") + '">' +
+      '<div class="cat-image-thumb">' +
+      (has ? '<img src="' + url + '" alt="">' : '<span>' + name.charAt(0) + "</span>") +
+      "</div>" +
+      '<div class="cat-image-info">' +
+      "<b>" + name + "</b>" +
+      '<div class="cat-image-actions">' +
+      '<label class="btn ghost">Загрузить<input type="file" accept="image/*" data-cat-upload="' + name + '" style="display:none"></label>' +
+      (has ? '<button type="button" class="btn ghost" data-cat-remove="' + name + '">Убрать фото</button>' : "") +
+      "</div></div></div>"
+    );
+  }
+
+  function renderCatImages() {
+    if (!catImagesBox) return;
+    const rows = [];
+    MB.GROUPS.forEach(function (g) {
+      rows.push(catImageRow(g.name, true));
+      g.children.forEach(function (c) { rows.push(catImageRow(c, false)); });
+    });
+    catImagesBox.innerHTML = rows.join("");
+  }
+
+  if (catImagesBox) {
+    catImagesBox.addEventListener("change", function (e) {
+      const inp = e.target.closest("[data-cat-upload]");
+      if (!inp) return;
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      const name = inp.getAttribute("data-cat-upload");
+      const reader = new FileReader();
+      reader.onload = function () {
+        MB.setCategoryImage(name, reader.result);
+        renderCatImages();
+        showToast("Фото категории «" + name + "» обновлено");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    catImagesBox.addEventListener("click", function (e) {
+      const rm = e.target.closest("[data-cat-remove]");
+      if (!rm) return;
+      const name = rm.getAttribute("data-cat-remove");
+      MB.removeCategoryImage(name);
+      renderCatImages();
+      showToast("Фото категории «" + name + "» удалено");
+    });
+  }
 
   function render() {
     const list = MB.loadProducts();
@@ -360,6 +415,7 @@
     const data = {
       products: MB.loadProducts(),
       settings: MB.loadSettings(),
+      categoryImages: MB.loadCategoryImages(),
       exportDate: new Date().toISOString()
     };
     
@@ -393,11 +449,16 @@
         if (data.settings && typeof data.settings === "object") {
           MB.saveSettings(data.settings);
         }
+
+        if (data.categoryImages && typeof data.categoryImages === "object") {
+          MB.saveCategoryImages(data.categoryImages);
+        }
         
         showToast("Данные импортированы успешно");
         render();
         renderStats();
         renderCatToggles();
+        renderCatImages();
         fillSettings();
       } catch (err) {
         showToast("Ошибка при импорте данных");

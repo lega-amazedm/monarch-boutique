@@ -141,8 +141,10 @@
         if (cartLink) {
           MB.copyText(cartLink);
           showToast("Ссылка на корзину скопирована");
-        } else {
+        } else if (cartLink === null) {
           showToast("Корзина пуста");
+        } else {
+          showToast("Ссылка появится, когда сайт будет открыт по адресу (не файлом с компьютера)");
         }
       });
     }
@@ -173,12 +175,9 @@
     const checkoutWa = document.getElementById("checkout-wa");
     if (checkoutWa) {
       checkoutWa.addEventListener("click", function () {
-        const cartLink = MB.generateCartLink();
-        const text = MB.cartOrderText();
-        
-        MB.copyText(text);
+        MB.copyText(MB.cartOrderText());
         window.open(MB.cartWaLink(), "_blank");
-        
+
         closeCheckout();
         showToast("Заказ отправлен в WhatsApp");
       });
@@ -188,12 +187,12 @@
     if (checkoutTg) {
       checkoutTg.addEventListener("click", function () {
         const tg = MB.cartTgLink();
-        
+
         MB.copyText(tg.text);
         window.open(tg.share, "_blank");
-        
+
         closeCheckout();
-        showToast("Ссылка на корзину готова. Выберите чат @" + MB.TELEGRAM);
+        showToast("Текст заказа скопирован. Выберите чат @" + MB.TELEGRAM);
       });
     }
   }
