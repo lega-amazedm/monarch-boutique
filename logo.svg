@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="20" y1="10" x2="180" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff6dc"/>
+      <stop offset="0.35" stop-color="#eecf8e"/>
+      <stop offset="0.7" stop-color="#c9a227"/>
+      <stop offset="1" stop-color="#8a6428"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="100" cy="100" r="93" stroke="url(#gold)" stroke-width="1.4"/>
+  <circle cx="100" cy="100" r="85" stroke="url(#gold)" stroke-width="0.5" opacity="0.55"/>
+
+  <!-- crown -->
+  <path d="M58 76 L58 62 L74 46 L90 62 L100 40 L110 62 L126 46 L142 62 L142 76 Z" fill="url(#gold)"/>
+  <circle cx="74" cy="46" r="3.2" fill="url(#gold)"/>
+  <circle cx="100" cy="40" r="3.6" fill="url(#gold)"/>
+  <circle cx="126" cy="46" r="3.2" fill="url(#gold)"/>
+  <rect x="55" y="76" width="90" height="9" rx="2" fill="url(#gold)"/>
+  <rect x="96" y="76.5" width="8" height="8" transform="rotate(45 100 80.5)" fill="#050505"/>
+
+  <!-- monogram M -->
+  <path d="M60 152 L60 90 L78 90 L100 124 L122 90 L140 90 L140 152 L126 152 L126 112 L104 146 L96 146 L74 112 L74 152 Z" fill="url(#gold)"/>
+
+  <!-- flanking accents -->
+  <circle cx="26" cy="100" r="2" fill="url(#gold)" opacity="0.85"/>
+  <circle cx="174" cy="100" r="2" fill="url(#gold)" opacity="0.85"/>
+</svg>
